@@ -1,0 +1,11 @@
+# Core runtime (rencana M1–M6)
+PyQt6>=6.7
+google-genai>=2.20
+sounddevice>=0.5
+numpy>=1.26
+qasync>=0.27
+platformdirs>=4.0
+
+# Development
+pytest>=8.0
+ruff>=0.6

@@ -1,0 +1,30 @@
+{
+  "gemini_api_key": "",
+  "model": "models/gemini-2.5-flash-native-audio-preview-12-2025",
+  "model_fallbacks": [
+    "models/gemini-2.5-flash-native-audio-preview-12-2025",
+    "models/gemini-live-2.5-flash-preview"
+  ],
+  "voice": "Puck",
+  "audio": {
+    "input_device": null,
+    "output_device": null,
+    "half_duplex": false,
+    "silence_ms": 650,
+    "prefix_padding_ms": 300
+  },
+  "persona": {
+    "character_name": "Ray",
+    "user_name": "",
+    "cefr_level": "B1",
+    "spice_level": 1,
+    "correction_level": 2,
+    "indonesian_help": true,
+    "auto_emotion": true
+  },
+  "ui": {
+    "always_on_top": false,
+    "theme": "midnight",
+    "fps_cap": 60
+  }
+}
