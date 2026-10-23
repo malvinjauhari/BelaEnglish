@@ -1,7 +1,7 @@
-# RayEnglish
+# BelaEnglish
 
 Voice agent untuk latihan speaking bahasa Inggris — ngobrol suara dengan
-karakter 2.5D bernama **Ray**. Python + PyQt6 + Gemini Live API.
+karakter 2.5D semi-realistis bernama **Rey**. Python + PyQt6 + Gemini Live API.
 
 > **Status: PLAN.** Belum ada implementasi. Baca **[PLAN.md](PLAN.md)** dulu.
 
@@ -10,7 +10,7 @@ karakter 2.5D bernama **Ray**. Python + PyQt6 + Gemini Live API.
 | File | Isi |
 |---|---|
 | [PLAN.md](PLAN.md) | Rencana lengkap: arsitektur, data, UI, roadmap, risiko |
-| [docs/PERSONA.md](docs/PERSONA.md) | Kepribadian Ray + system instruction final |
+| [docs/PERSONA.md](docs/PERSONA.md) | Kepribadian Rey + system instruction final |
 | [docs/MARK-LI-STUDY.md](docs/MARK-LI-STUDY.md) | Hasil studi codebase Mark-LI dan keputusan turunannya |
 
 ## Konsep
@@ -20,7 +20,7 @@ User bicara → AI memproses → AI melihat data (skenario, vocab, profil,
 riwayat kesalahan) → AI merespons dengan suara + animasi karakter
 ```
 
-Ray spontan, padat, friendly. Boleh pakai ekspresi kasual ("anjir", "gila",
+Rey spontan, padat, friendly. Boleh pakai ekspresi kasual ("anjir", "gila",
 "damn") sebagai bahan edukasi register — tidak pernah sebagai hinaan.
 
 ## Target MVP
@@ -34,7 +34,7 @@ Ray spontan, padat, friendly. Boleh pakai ekspresi kasual ("anjir", "gila",
 ## Struktur Rencana
 
 ```
-RayEnglish/
+BelaEnglish/
 ├── PLAN.md
 ├── requirements.txt
 ├── config.example.json

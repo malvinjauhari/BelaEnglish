@@ -1,8 +1,9 @@
-# RayEnglish — Rencana Pembangunan (Plan First)
+# BelaEnglish — Rencana Pembangunan (Plan First)
 
-> Voice agent untuk latihan speaking bahasa Inggris, dengan karakter 2.5D yang
-> bisa diajak ngobrol. Dibangun ulang dengan Python + PyQt6, mengambil pola
-> arsitektur dari codebase **Mark-LI** (repo ini) sebagai referensi.
+> Voice agent untuk latihan speaking bahasa Inggris, dengan karakter 2.5D
+> semi-realistis yang bisa diajak ngobrol. Dibangun ulang dengan Python + PyQt6,
+> mengambil pola arsitektur dari codebase **Mark-LI** (repo ini) sebagai
+> referensi.
 
 Status: **PLAN — belum ada implementasi.** Dokumen ini yang jadi kontrak kerja
 sebelum kode pertama ditulis.
@@ -13,8 +14,8 @@ Tanggal: 2026-10-23
 
 ## 1. Ringkasan Produk
 
-RayEnglish adalah aplikasi desktop yang membuat user bisa **ngobrol suara**
-dengan karakter bernama **Ray** untuk latihan bahasa Inggris. Ray bukan chatbot
+BelaEnglish adalah aplikasi desktop yang membuat user bisa **ngobrol suara**
+dengan karakter bernama **Rey** untuk latihan bahasa Inggris. Rey bukan chatbot
 kaku: dia spontan, padat, friendly, dan boleh pakai ekspresi kasual
 ("anjir", "gila", "damn") sebagai bahan edukasi register bahasa.
 
@@ -28,11 +29,11 @@ User bicara  →  AI memproses  →  AI melihat data yang tersedia  →  AI mere
 
 ### Tujuan MVP
 
-1. Ngobrol suara real-time, latency terasa natural (< 1 detik sebelum Ray mulai
+1. Ngobrol suara real-time, latency terasa natural (< 1 detik sebelum Rey mulai
    bicara).
-2. Karakter 2.5D yang bereaksi: idle, mendengar, berpikir, bicara (lip sync),
-   ekspresi senang/bingung/termotivasi.
-3. Ray punya "data yang tersedia": skenario latihan, bank frasa/kosakata,
+2. Karakter 2.5D semi-realistis yang bereaksi: idle, mendengar, berpikir,
+   bicara (lip sync), ekspresi senang/bingung/termotivasi.
+3. Rey punya "data yang tersedia": skenario latihan, bank frasa/kosakata,
    profil user, dan riwayat kesalahan — diakses lewat tool call.
 4. Koreksi bahasa yang halus: maksimal satu koreksi per turn, dibungkus recast
    natural, bukan ceramah grammar.
@@ -54,11 +55,11 @@ User bicara  →  AI memproses  →  AI melihat data yang tersedia  →  AI mere
 |---|---|---|---|
 | A1 | **PyQt6** untuk UI | Diminta user; Mark-LI juga PyQt6 sehingga pola rendering & threading bisa diadaptasi | — |
 | A2 | **Gemini Live API native audio** (`gemini-2.5-flash-native-audio-preview-12-2025`) | Latency paling rendah, barge-in natural, tidak perlu rangkai STT→LLM→TTS | Kontrol materi via tool call + system instruction, bukan via pipeline teks |
-| A3 | **Karakter 2.5D digambar dengan QPainter** (layered rig), bukan WebEngine/3D | Ringan, tanpa dependensi browser, bisa 60fps, aset SVG/PNG mudah diganti | Perlu bikin rig & aset sendiri; tidak ada physics 3D |
+| A3 | **Karakter 2.5D semi-realistis** dengan layered PNG rig di QPainter, bukan WebEngine/3D | Ringan, tanpa dependensi browser, 60fps, dan tetap bisa tampil "hidup" dengan shading yang sudah di-bake | Butuh art semi-realistis yang konsisten (bukan vector); lip sync harus pakai crossfade tekstur, bukan shape swap |
 | A4 | **SQLite (stdlib)** untuk data latihan & progres | Lokal, nol biaya, cukup untuk skala personal | Migrasi manual sederhana (versioned SQL) |
 | A5 | **qasync** — satu event loop untuk Qt + asyncio | Menghindari jembatan thread manual yang rawan race | Wajib disiplin: tidak boleh blocking call di event loop |
 | A6 | **Tool calling** sebagai jembatan "AI melihat data" | Model tetap bisa jawab bebas, tapi fakta latihan tetap deterministik dari DB | Perlu schema tool yang ketat + timeout/fallback |
-| A7 | **Repo terpisah** (`RayEnglish.git`) walau folder ada di dalam Mark-LI | Riwayat & rilis independen; Mark-LI tetap referensi yang tidak diubah | Folder di-ignore oleh git Mark-LI via `.git/info/exclude` |
+| A7 | **Repo terpisah** (`BelaEnglish.git`) walau folder ada di dalam Mark-LI | Riwayat & rilis independen; Mark-LI tetap referensi yang tidak diubah | Folder di-ignore oleh git Mark-LI via `.git/info/exclude` |
 
 ### Alternatif yang ditolak (untuk sekarang)
 
@@ -82,7 +83,7 @@ membedah artefak.
 
 | Pola Mark-LI | Lokasi | Yang diadopsi |
 |---|---|---|
-| Audio in 16 kHz, chunk 1024, callback sounddevice → `asyncio.Queue` | `main.py:86-89`, `main.py:962-989` | Struktur yang sama untuk mic RayEnglish |
+| Audio in 16 kHz, chunk 1024, callback sounddevice → `asyncio.Queue` | `main.py:86-89`, `main.py:962-989` | Struktur yang sama untuk mic BelaEnglish |
 | Audio out 24 kHz, chunk dipotong 2400 byte (~50 ms) supaya interrupt responsif | `main.py:1005-1010` | Pemotongan chunk yang sama |
 | TaskGroup: sender / listener / receiver / player berjalan paralel | `main.py:1526-1534` | Orkestrasi task yang sama, ditambah state machine eksplisit |
 | Reconnect loop + fallback config saat API menolak fitur preview | `main.py:1488-1568` | Wajib untuk stabilitas preview API |
@@ -99,7 +100,7 @@ membedah artefak.
 |---|---|
 | Mic diblokir total saat AI bicara (`main.py:966-975`) | Mematikan barge-in. Untuk tutor, user harus bisa menyela. Lihat §6.4 |
 | Memory berbasis JSON bebas (`memory/long_term.json`) | Tidak cocok untuk query statistik & spaced repetition → SQLite |
-| Prompt "JARVIS profesional, no fluff, panggil 'sir'" (`core/prompt.txt`) | Bertentangan total dengan persona Ray yang kasual |
+| Prompt "JARVIS profesional, no fluff, panggil 'sir'" (`core/prompt.txt`) | Bertentangan total dengan persona Rey yang kasual |
 | 20+ tool sistem operasi (browser, volume, game updater, dll.) | Di luar scope; hanya tool latihan bahasa yang didaftarkan |
 | UI HUD sci-fi berat (scanline, glow, boot sequence) | Diganti UI companion yang lebih tenang dan fokus percakapan |
 | `main.py` monolit 80 KB | Dipecah per modul (lihat §10) |
@@ -108,17 +109,17 @@ membedah artefak.
 
 1. **Model ID preview gampang berubah.** Mark-LI memakai
    `models/gemini-2.5-flash-native-audio-preview-12-2025` (`main.py:85`).
-   RayEnglish menyimpan daftar model di config + fallback berurutan.
+   BelaEnglish menyimpan daftar model di config + fallback berurutan.
 2. **SDK di venv adalah `google-genai 2.20.0`**, lebih baru dari
    `requirements.txt` Mark-LI (`>=2.8.0`). Fitur yang tersedia dan sudah
    diverifikasi: `realtime_input_config` (`activity_handling`,
    `automatic_activity_detection`), `LiveServerContent.interrupted`,
    `context_window_compression`, `proactivity`, `safety_settings`.
-3. **`interrupted` belum dipakai Mark-LI.** RayEnglish memakainya untuk
+3. **`interrupted` belum dipakai Mark-LI.** BelaEnglish memakainya untuk
    flush queue audio + reset animasi mulut.
 4. **UI dan asyncio dipisah thread** di Mark-LI (`main.py:1618-1622`). Pola itu
    jalan, tapi qasync membuat kode lebih sederhana dan aman.
-5. **Tidak ada test sama sekali.** RayEnglish menetapkan test untuk persona,
+5. **Tidak ada test sama sekali.** BelaEnglish menetapkan test untuk persona,
    tool, dan DB sejak milestone pertama.
 
 ---
@@ -228,7 +229,7 @@ nyata.
 
 ### 5.4 Barge-in (penting, beda dari Mark-LI)
 
-1. Mic **tidak** dimatikan saat Ray bicara (Mark-LI mematikannya — lihat §3.2).
+1. Mic **tidak** dimatikan saat Rey bicara (Mark-LI mematikannya — lihat §3.2).
 2. `activity_handling=START_OF_ACTIVITY_INTERRUPTS` membuat server memutus
    respons sendiri saat user mulai bicara.
 3. Saat menerima `server_content.interrupted`:
@@ -238,7 +239,7 @@ nyata.
 4. Mode "headphone" (default) vs "speaker":
    - headphone: barge-in penuh.
    - speaker: setengah dupleks adaptif — input di-attenuasi saat output keras,
-     supaya suara Ray tidak memicu interrupt sendiri.
+     supaya suara Rey tidak memicu interrupt sendiri.
 5. Tombol mute + push-to-talk (`Ctrl+Space`) sebagai fallback.
 
 ### 5.5 Latency budget (target)
@@ -274,7 +275,7 @@ Diukur dan dicatat per turn (`latency_ms`) supaya bisa dibandingkan antar versi.
 
 ### 6.2 Mode latihan
 
-| Mode | Perilaku Ray | Data yang dipakai |
+| Mode | Perilaku Rey | Data yang dipakai |
 |---|---|---|
 | **Free Talk** | Ngobrol bebas, topik mengikuti user | profil, riwayat kesalahan, kosakata due |
 | **Roleplay** | Main peran sesuai skenario (kafe, interview, bandara) | `scenarios`, `phrases` |
@@ -286,7 +287,7 @@ Diukur dan dicatat per turn (`latency_ms`) supaya bisa dibandingkan antar versi.
 1. **Satu koreksi per turn.** Kalau ada 3 kesalahan, pilih yang paling
    mengganggu makna.
 2. **Recast dulu, jelaskan kemudian.** Contoh: user bilang "I go there
-   yesterday" → Ray: "Oh you went there yesterday? Nice. (quick note: 'go' →
+   yesterday" → Rey: "Oh you went there yesterday? Nice. (quick note: 'go' →
    'went' for past)". Kalau intensitas koreksi = 1, bagian note dihilangkan.
 3. **Jangan pernah bilang "wrong".** Gunakan "more natural", "native speakers
    usually say…".
@@ -297,7 +298,7 @@ Diukur dan dicatat per turn (`latency_ms`) supaya bisa dibandingkan antar versi.
 
 ### 6.4 Penanganan kasus khusus
 
-- **User diam > 12 s**: Ray memberi satu prompt ringan ("Still there? Take your
+- **User diam > 12 s**: Rey memberi satu prompt ringan ("Still there? Take your
   time — want me to repeat the question?"). Maksimal 2 kali, lalu idle.
 - **User bicara Indonesia**: tetap jawab Inggris, boleh satu kalimat klarifikasi
   Indonesia, lalu kembali.
@@ -313,7 +314,7 @@ Dokumen lengkap + prompt final: **[docs/PERSONA.md](docs/PERSONA.md)**.
 
 Ringkasan kepribadian:
 
-- **Ray**, 24 tahun, teman ngobrol bilingual (English/Indonesian) yang jago
+- **Rey**, 24 tahun, teman ngobrol bilingual (English/Indonesian) yang jago
   bahasa Inggris tapi santai, bukan guru formal.
 - **Spontan**: reaksi dulu ("Wait, seriously?"), baru menjawab.
 - **Padat**: default 1–3 kalimat, ≤ 40 kata.
@@ -337,7 +338,7 @@ Ringkasan kepribadian:
 
 - Tanpa slur, tanpa konten seksual, tanpa ancaman.
 - Kata kasar tidak pernah jadi predikat tentang user ("you are stupid" → dilarang).
-- Kalau user terlihat terganggu, spice level turun dan Ray minta maaf singkat.
+- Kalau user terlihat terganggu, spice level turun dan Rey minta maaf singkat.
 - Tetap patuh pada safety policy penyedia model; jika model menolak, ada
   fallback kalimat netral (bukan error ke user).
 
@@ -443,11 +444,11 @@ setelah koreksi benar-benar diucapkan.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  RayEnglish                                   ─   □   ✕             │
+│  BelaEnglish                                   ─   □   ✕             │
 ├───────────────────────────┬──────────────────────────────────────────┤
 │                           │  Cafe Order · B1           00:42         │
 │      ┌─────────────┐      │  ┌────────────────────────────────────┐  │
-│      │             │      │  │ Ray  "So, what can I get you?"    │  │
+│      │             │      │  │ Rey  "So, what can I get you?"    │  │
 │      │   KARAKTER  │      │  └────────────────────────────────────┘  │
 │      │    2.5D     │      │       ┌──────────────────────────────┐   │
 │      │             │      │       │ You  "I want one coffee"     │   │
@@ -491,8 +492,8 @@ Semua warna di satu modul `ui/theme.py` (token, bukan hardcode di widget).
 ### 9.4 Interaksi
 
 - Hotkey global `Ctrl+Space`: mute/unmute.
-- Klik karakter: Ray bereaksi kecil (contoh: "Hm? Yeah?").
-- Klik kartu koreksi: Ray membacakan versi yang benar.
+- Klik karakter: Rey bereaksi kecil (contoh: "Hm? Yeah?").
+- Klik kartu koreksi: Rey membacakan versi yang benar.
 - `Esc`: tutup overlay; window bisa selalu di atas (opsi).
 - Tray icon: show/hide, mode, quit.
 - Onboarding pertama: pilih nama, level, spice level, mic device, API key.
@@ -508,7 +509,7 @@ Semua warna di satu modul `ui/theme.py` (token, bukan hardcode di widget).
 ## 10. Struktur Folder
 
 ```
-RayEnglish/
+BelaEnglish/
 ├── PLAN.md                  ← dokumen ini
 ├── README.md
 ├── requirements.txt
@@ -556,59 +557,97 @@ Prinsip: `ui/` tidak pernah import `google.genai`; `core/` tidak pernah import
 
 ---
 
-## 11. Avatar 2.5D — Spesifikasi Teknis
+## 11. Avatar 2.5D Semi-Realistis — Spesifikasi Teknis
+
+Art style: **semi-realistis** (kulit dengan shading halus, mata detail, rambut
+berlapis, pencahayaan lembut). Konsekuensinya: tidak bisa mengandalkan bentuk
+vector sederhana, dan pergantian bentuk mulut harus mulus agar tidak terlihat
+"uncanny". Karena itu rig memakai **layer PNG yang sudah di-bake** + crossfade.
 
 ### 11.1 Layer (urutan render)
 
 ```
-background glow → body → arms → head → hair_back → eyes_white → iris
-→ brows → mouth → hair_front → blush → foreground fx
+bg_glow → hair_back → torso → neck → head_base (kulit + telinga)
+→ face_shadow → eye_white L/R → iris L/R → eyelid L/R → lashes L/R
+→ brows L/R → nose → mouth_base → mouth_inner (gigi + lidah)
+→ lips_upper → lips_lower → hair_front → accessory → blush/gloss → fx
 ```
 
-Setiap layer: `QPixmap`/`QSvgRenderer` + transform (translate, rotate, scale).
-Aset default digambar **prosedural** (vector) supaya aplikasi jalan sebelum art
-final ada — penting agar M1 bisa didemokan.
+- Format aset: **PNG RGBA**, canvas 1600×1600 (head) dan 1600×2000 (torso),
+  diekspor @2x lalu di-downscale saat load.
+- Setiap layer punya anchor tetap yang dicatat di `assets/rig.json`
+  (`head`, `mouth`, `eye_l`, `eye_r`, `brow_l`, `brow_r`, `neck`).
+- SVG **tidak** dipakai untuk art final (tidak cocok untuk painting); SVG hanya
+  untuk ikon UI.
 
-### 11.2 Rig
+### 11.2 Placeholder vs art final
+
+- **M1** memakai *blockout* prosedural (bentuk dasar + shading gradien) dengan
+  kontrak anchor yang sama, supaya aplikasi bisa jalan dan diuji sebelum art ada.
+- **M3** art semi-realistis menggantikan blockout tanpa mengubah kode rig —
+  cukup ganti file + `rig.json`.
+- Blockout **tidak** dipakai untuk demo publik; itu alat kerja.
+
+### 11.3 Rig
 
 - Breathing: `y = 2 * sin(2π * 0.25 * t)`, scale 1.000–1.005.
-- Head sway: `rot = 1.5° * sin(2π * 0.18 * t + φ)`; target tambahan saat
-  `LISTENING` (tilt 3°) di-lerp.
-- Blink: jadwal acak 2–6 s, durasi 90 ms (tutup 40 ms, buka 50 ms).
-- Look-at: iris bergeser maks 8 px mengikuti kursor (opsional, default aktif).
-- Semua transisi pakai lerp eksponensial (`α = 1 - exp(-dt/τ)`) supaya halus.
+- Head sway: `rot = 1.5° * sin(2π * 0.18 * t + φ)`; tambahan tilt 3° saat
+  `LISTENING`.
+- Micro-saccade mata: geser iris 1–2 px setiap 1–3 s (semi-realistis butuh mata
+  yang tidak "beku").
+- Blink: 3 frame (open / half / closed), crossfade 70 ms, jadwal acak 2–6 s.
+- Look-at kursor: iris bergeser maks 10 px, dengan dead-zone supaya tidak gelisah.
+- Semua transisi pakai lerp eksponensial (`α = 1 - exp(-dt/τ)`).
 
-### 11.3 Lip sync (tanpa viseme dari API)
+### 11.4 Lip sync semi-realistis
 
 Karena Gemini hanya mengirim PCM:
 
-1. Hitung RMS per 20 ms → `level` (0–1, dinormalisasi adaptif).
-2. Hitung spectral centroid 3 band (low/mid/high) dari FFT 512 titik.
-3. Petakan ke 5 bentuk mulut:
+1. RMS per 20 ms → `level` (0–1, dinormalisasi adaptif).
+2. FFT 512 titik → energi 3 band (low/mid/high) → `shape_hint`.
+3. Petakan ke **7 tekstur mulut**: `M` (tertutup), `A`, `E`, `O`, `U`, `F`,
+   `smile`.
+4. **Crossfade dua tekstur terdekat** (alpha 60 ms), bukan hard swap. Ini kunci
+   agar wajah semi-realistis tidak "patah".
+5. Lapisan `jaw` ikut bergeser turun maks 3 px saat `A/O` untuk ilusi rahang.
+6. Smoothing attack 40 ms / release 90 ms; saat `interrupted` paksa `M` dalam
+   60 ms.
+7. Saat hening, mulut kembali ke `M` dengan ekspresi netral (bukan senyum
+   terus-menerus).
 
-| Band dominan | Viseme | Bentuk |
-|---|---|---|
-| low + level tinggi | `O` | oval |
-| mid | `A` | buka lebar |
-| high | `E` | melebar |
-| level rendah | `M` | tertutup |
-| transisi | `F` | setengah |
+### 11.5 Emosi
 
-4. Smoothing attack 40 ms / release 90 ms agar tidak "flapping".
-5. Saat `interrupted`, paksa `M` dalam 60 ms.
+`neutral, happy, thinking, confused, encouraging, surprised` — mengatur:
+bentuk alis (4 varian per sisi), tinggi kelopak, curve sudut mulut, dan warna
+rim light. Karena wajah semi-realistis, emosi **tidak** mengubah geometri wajah
+secara ekstrem; cukup alis + mata + mulut + pencahayaan.
 
-### 11.4 Emosi
+Dipicu tool `set_emotion` + heuristik lokal (mis. `THINKING` saat menunggu tool,
+`SURPRISED` saat interupsi).
 
-`neutral, happy, thinking, confused, encouraging, surprised` — masing-masing
-mengatur posisi alis, skala mata, curve mulut, dan warna glow aksen. Dipicu
-tool `set_emotion` + heuristik lokal (mis. `THINKING` saat menunggu tool).
+### 11.6 Performa & memori
 
-### 11.5 Performa
-
-- Target 60 fps @ 1180×720 di GPU terintegrasi.
-- Cache layer hasil transform per state; hanya render ulang bila berubah.
-- Budget CPU karakter < 8% satu core.
+- Pre-scale semua layer ke ukuran tampil saat load (bukan tiap frame).
+- **Cache komposit statis** (`torso + hair_back + head_base + face_shadow +
+  hair_front`) ke satu `QPixmap`; per frame hanya gambar 6–8 layer dinamis.
+- Budget memori tekstur < 120 MB (1600² RGBA ≈ 10 MB per layer → jangan simpan
+  semua di resolusi penuh).
+- Target 60 fps @ 1180×720; CPU karakter < 8% satu core.
 - Jika fps < 45 selama 3 s → turunkan ke 30 fps otomatis.
+
+### 11.7 Pipeline & lisensi aset
+
+Semi-realistis berarti kualitas art menentukan 60% hasil akhir. Opsi:
+
+1. **Komisi artis** (paling konsisten): minta layer terpisah + anchor, bukan
+   satu gambar jadi.
+2. **AI-generated + retouch manual**: boleh untuk eksplorasi, tapi wajah harus
+   konsisten antar layer; butuh kerja manual besar.
+3. **Base 3D → render 2D**: buat/model karakter sederhana, render layer dari
+   angle yang sama (paling mahal, paling konsisten).
+
+Semua aset wajib punya izin pakai komersial dan dicatat di `assets/LICENSE.md`.
+
 
 ---
 
@@ -638,12 +677,13 @@ tool `set_emotion` + heuristik lokal (mis. `THINKING` saat menunggu tool).
 
 ### M1 — Skeleton yang bisa dijalankan
 
-Deliverable: `python run.py` membuka window, karakter idle bernapas & berkedip,
-mode chip bisa diklik, transcript kosong, settings tersimpan.
+Deliverable: `python run.py` membuka window, karakter *blockout* idle bernapas &
+berkedip, mode chip bisa diklik, transcript kosong, settings tersimpan.
 
 Acceptance:
 - [ ] Window frameless + rounded, resize mulus, tidak flicker.
 - [ ] 60 fps di mesin target.
+- [ ] Kontrak anchor `rig.json` sudah ada, walau art masih blockout.
 - [ ] `pytest` hijau untuk `test_state.py` (state machine murni).
 - [ ] Tidak ada API key hardcoded.
 
@@ -658,19 +698,22 @@ Acceptance:
 - [ ] Putus internet 5 s → reconnect tanpa restart aplikasi.
 - [ ] Log transkrip tersimpan di DB.
 
-### M3 — Karakter hidup
+### M3 — Karakter hidup (semi-realistis)
 
-Deliverable: lip sync, emosi, state visual sinkron dengan audio.
+Deliverable: art semi-realistis terpasang, lip sync crossfade, emosi, state
+visual sinkron dengan audio.
 
 Acceptance:
+- [ ] Layer PNG + `rig.json` menggantikan blockout tanpa ubah kode rig.
+- [ ] Crossfade mulut tidak terlihat "patah" saat 10 kalimat uji.
 - [ ] Mulut tertutup ≤ 120 ms setelah audio berhenti.
 - [ ] 6 emosi bisa dipicu manual dan lewat tool.
-- [ ] CPU karakter < 8%.
+- [ ] CPU karakter < 8%, memori tekstur < 120 MB.
 
 ### M4 — Data & tool
 
 Deliverable: 6 skenario, frasa, profil, `save_mistake`, `lookup_phrase`,
-`get_progress` berfungsi; Ray benar-benar memakai datanya.
+`get_progress` berfungsi; Rey benar-benar memakai datanya.
 
 Acceptance:
 - [ ] Roleplay memakai frasa skenario (diverifikasi lewat log tool call).
@@ -706,8 +749,8 @@ M5 3–4 hari, M6 3–4 hari (bisa berubah sesuai iterasi desain).
 | Risiko | Dampak | Mitigasi |
 |---|---|---|
 | Model preview dihapus/di-rename | App tidak connect | Daftar model + fallback + pesan jelas; config bisa diedit |
-| Gemini menolak persona kasar | Ray jadi datar | Spice default 1, prompt bertahap, fallback kalimat netral; opsi backend Ollama (v2) |
-| Echo speaker memicu interrupt | Ray memotong diri sendiri | Mode headphone default; guard setengah dupleks; AEC (v2) |
+| Gemini menolak persona kasar | Rey jadi datar | Spice default 1, prompt bertahap, fallback kalimat netral; opsi backend Ollama (v2) |
+| Echo speaker memicu interrupt | Rey memotong diri sendiri | Mode headphone default; guard setengah dupleks; AEC (v2) |
 | Latency internet Indonesia | Percakapan patah | Ukur p50/p95; chunk kecil; opsi region; cache prompt |
 | Qt + asyncio race | Crash acak | qasync + aturan threading; test state machine; signal-only UI update |
 | Aset karakter belum ada | Tidak bisa demo | Rig prosedural default di M1 |
@@ -720,7 +763,7 @@ M5 3–4 hari, M6 3–4 hari (bisa berubah sesuai iterasi desain).
 ## 15. Setup Development (rencana)
 
 ```bash
-cd RayEnglish
+cd BelaEnglish
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -738,27 +781,29 @@ python run.py
 
 ## 16. Pertanyaan Terbuka
 
-1. Nama karakter final: **Ray** (mengikuti nama repo) — atau mau nama lain?
-2. Art style karakter: anime, kartun flat, atau semi-realistis? (menentukan aset
-   M1/M3)
-3. Voice Gemini: `Puck` (default), `Charon`, `Kore`, atau `Fenrir`? Perlu
+Sudah diputuskan: nama karakter **Rey**, art style **semi-realistis**, app
+**BelaEnglish**.
+
+1. **Voice Gemini**: `Puck` (default), `Charon`, `Kore`, atau `Fenrir`? Perlu
    dicoba langsung karena karakter suara memengaruhi persona.
-4. Level default user: B1? Dan apakah onboarding menanyakan level?
-5. Perlu mode "Indonesian explanation" (penjelasan grammar dalam bahasa
+2. **Sumber aset**: komisi artis, AI + retouch, atau render dari base 3D?
+   (menentukan jadwal M3)
+3. Level default user: B1? Dan apakah onboarding menanyakan level?
+4. Perlu mode "Indonesian explanation" (penjelasan grammar dalam bahasa
    Indonesia) sebagai toggle, atau cukup sesekali?
-6. Target platform rilis pertama: Linux saja, atau Windows juga?
+5. Target platform rilis pertama: Linux saja, atau Windows juga?
 
 ---
 
 ## 17. Definisi Selesai (MVP)
 
-RayEnglish dinyatakan MVP kalau:
+BelaEnglish dinyatakan MVP kalau:
 
 1. User bisa buka aplikasi, pilih skenario, dan ngobrol suara tanpa menyentuh
    keyboard.
 2. Karakter terlihat hidup: bernapas, berkedip, mulut bergerak sesuai suara,
    ekspresi berubah sesuai konteks.
-3. Ray memakai minimal 3 sumber data (skenario, profil, riwayat kesalahan) dan
+3. Rey memakai minimal 3 sumber data (skenario, profil, riwayat kesalahan) dan
    itu terlihat di log tool call.
 4. Setiap sesi menghasilkan laporan yang bisa dibaca ulang.
 5. Tidak ada crash selama 30 menit sesi terus-menerus.

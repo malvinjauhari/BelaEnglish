@@ -1,4 +1,4 @@
-# Studi Codebase Mark-LI → Bahan RayEnglish
+# Studi Codebase Mark-LI → Bahan BelaEnglish
 
 Catatan analisis source Mark-LI (repo induk, versi ini: commit `d3238af`).
 Tujuannya bukan menyalin, tapi mengambil pola yang sudah terbukti di lapangan
@@ -49,7 +49,7 @@ RECEIVE_SAMPLE_RATE = 24000
 CHUNK_SIZE          = 1024
 ```
 
-Implikasi untuk RayEnglish:
+Implikasi untuk BelaEnglish:
 
 - Nilai ini sudah teruji, langsung dipakai.
 - Model ID menyimpan tanggal preview (`12-2025`) → **harus** bisa dikonfigurasi.
@@ -82,7 +82,7 @@ Poin penting:
   dipertahankan.
 - `mime_type` cukup `"audio/pcm"`; SDK menyimpulkan rate dari konfigurasi live.
 - **Kelemahan:** selama `_is_speaking` true, mic dibuang total. Barge-in mati.
-  RayEnglish menghapus guard ini dan mengandalkan `activity_handling` +
+  BelaEnglish menghapus guard ini dan mengandalkan `activity_handling` +
   `interrupted`.
 
 ### 3.2 API → speaker
@@ -103,7 +103,7 @@ Alasan pemotongan 50 ms: `interrupt()` bisa menghentikan suara dalam ≤ 50 ms
 
 `main.py:1107-1116` membuka `sd.RawOutputStream` 24 kHz, mono, int16,
 `blocksize=CHUNK_SIZE`, lalu menarik dari queue dengan timeout 0,1 s. Saat
-`turn_done` dan queue kosong, stream di-flush. RayEnglish menambahkan envelope
+`turn_done` dan queue kosong, stream di-flush. BelaEnglish menambahkan envelope
 analyzer di titik ini sebelum bytes dikirim ke device.
 
 ---
@@ -122,7 +122,7 @@ analyzer di titik ini sebelum bytes dikirim ke device.
    `affective` / `proactiv`, matikan fitur lalu `continue`
    (`main.py:1555-1568`).
 
-RayEnglish mengadopsi semuanya, plus exponential backoff + status UI yang jelas
+BelaEnglish mengadopsi semuanya, plus exponential backoff + status UI yang jelas
 (tidak hanya `print`).
 
 ---
@@ -148,11 +148,11 @@ Catatan:
 
 - `_execute_tool` menangkap exception dan mengembalikan
   `{"result": "Tool 'x' failed: ..."}` (`main.py:943-946`) sehingga sesi tidak
-  mati. RayEnglish mempertahankan prinsip ini + timeout.
+  mati. BelaEnglish mempertahankan prinsip ini + timeout.
 - Tool `save_memory` mengembalikan `{"silent": True}` (`main.py:781-784`) supaya
   model tidak mengumumkan bahwa ia menyimpan sesuatu. Prinsip yang sama dipakai
   untuk `save_mistake`.
-- Semua tool dijalankan **sekuensial** dalam satu turn. Untuk RayEnglish, 2 tool
+- Semua tool dijalankan **sekuensial** dalam satu turn. Untuk BelaEnglish, 2 tool
   per turn sudah cukup; tidak perlu paralel.
 
 ---
@@ -205,7 +205,7 @@ Kelebihan: sederhana, mudah dibaca manusia, tanpa migrasi.
 Kekurangan: tidak bisa query agregat ("berapa kali salah past tense minggu
 ini?"), tidak ada indeks, rawan korup kalau dua penulis bersamaan.
 
-RayEnglish memakai SQLite dengan tabel eksplisit (lihat `PLAN.md` §8). JSON
+BelaEnglish memakai SQLite dengan tabel eksplisit (lihat `PLAN.md` §8). JSON
 tetap dipakai untuk **config** (bukan data), karena cocok untuk itu.
 
 ---
@@ -245,7 +245,7 @@ threading.Thread(target=runner, daemon=True).start()
 ```
 
 Pola ini benar (signal aman lintas thread) dan diadopsi. Perbedaannya:
-RayEnglish memakai **qasync** supaya hanya ada satu loop, sehingga sinyal masih
+BelaEnglish memakai **qasync** supaya hanya ada satu loop, sehingga sinyal masih
 dipakai untuk UI tetapi tidak perlu thread asyncio terpisah.
 
 ### 8.2 Rendering 60 fps
@@ -254,7 +254,7 @@ dipakai untuk UI tetapi tidak perlu thread asyncio terpisah.
 ulang seluruh HUD dengan `QPainter` (anti-alias, gradient, path). Ini membuktikan
 QPainter cukup untuk animasi 60 fps di Python.
 
-RayEnglish memakai pendekatan yang sama, tetapi:
+BelaEnglish memakai pendekatan yang sama, tetapi:
 
 - render hanya layer yang berubah (cache),
 - transform dihitung dengan `dt` (bukan frame count) agar stabil di berbagai
@@ -273,7 +273,7 @@ self.view.page().runJavaScript(f"window.animateAvatar({volume:.3f});")
 
 Panggilan terjadi ~2 frame sekali dari `HudCanvas` (`ui.py:525-532`).
 
-Ini membuktikan minat pada avatar audio-reactive, tapi untuk RayEnglish
+Ini membuktikan minat pada avatar audio-reactive, tapi untuk BelaEnglish
 pendekatan WebEngine ditolak (lihat `PLAN.md` A3): terlalu berat, transparansi
 WebEngine di Linux rapuh, dan tidak ada wajah/mulut untuk lip sync. Konsep
 "envelope → parameter animasi" tetap dipakai, hanya kanalnya diganti signal Qt.
@@ -286,7 +286,7 @@ WebEngine di Linux rapuh, dan tidak ada wajah/mulut untuk lip sync. Konsep
 fungsi `run()`, validasi saat load, isolasi crash (plugin rusak ditandai
 `BROKEN` tanpa mematikan aplikasi), deteksi benturan nama tool.
 
-Untuk MVP RayEnglish, plugin **tidak** diaktifkan. Namun `ToolRegistry`
+Untuk MVP BelaEnglish, plugin **tidak** diaktifkan. Namun `ToolRegistry`
 didesain dengan antarmuka yang sama (nama, schema, handler, metadata) supaya
 plugin bisa ditambahkan tanpa refactor.
 
@@ -294,7 +294,7 @@ plugin bisa ditambahkan tanpa refactor.
 
 ## 10. Masalah di Mark-LI yang Tidak Diwarisi
 
-| Masalah | Bukti | Dampak | Solusi RayEnglish |
+| Masalah | Bukti | Dampak | Solusi BelaEnglish |
 |---|---|---|---|
 | Mic dimatikan saat AI bicara | `main.py:966-975` | Tidak bisa menyela; terasa seperti walkie-talkie | `START_OF_ACTIVITY_INTERRUPTS` + flush queue |
 | `interrupted` tidak ditangani | `main.py:997-1101` | Sisa audio bisa tetap berbunyi setelah interupsi | Tangani `server_content.interrupted` |
