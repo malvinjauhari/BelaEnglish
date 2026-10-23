@@ -284,7 +284,7 @@ Ditambah uji manual "golden set" 20 percakapan untuk mengecek rasa bahasa.
 | Spice level | 0–3 | Seberapa kasual/kasar Rey |
 | Correction level | 0–3 | Seberapa eksplisit koreksi |
 | Talk speed | 0.9–1.1 | `speaking_rate` bila didukung, atau pilih voice berbeda |
-| Voice | Puck / Charon / Kore / Fenrir | Karakter suara |
+| Voice | Kore (default, perempuan) / Aoede / Leda / Puck | Karakter suara |
 | Reply length | Short / Normal / Chatty | Menyesuaikan batas kata di prompt |
 | Indonesian help | On/Off | Izinkan klarifikasi bahasa Indonesia |
 | Auto-emotion | On/Off | Tool `set_emotion` vs heuristik lokal |

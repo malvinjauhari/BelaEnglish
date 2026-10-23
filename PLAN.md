@@ -205,7 +205,7 @@ LiveConnectConfig(
     output_audio_transcription={},
     speech_config=SpeechConfig(
         voice_config=VoiceConfig(
-            prebuilt_voice_config=PrebuiltVoiceConfig(voice_name="Puck")
+            prebuilt_voice_config=PrebuiltVoiceConfig(voice_name="Kore")
         )
     ),
     realtime_input_config=RealtimeInputConfig(
@@ -673,19 +673,20 @@ Semua aset wajib punya izin pakai komersial dan dicatat di `assets/LICENSE.md`.
 - [x] Keputusan arsitektur
 - [x] Skema data & tool
 - [x] Persona prompt draft
-- [ ] Review user (gerbang sebelum M1)
+- [x] Review user (gerbang sebelum M1) — voice `Kore`, karakter perempuan
 
-### M1 — Skeleton yang bisa dijalankan
+### M1 — Skeleton yang bisa dijalankan (selesai)
 
 Deliverable: `python run.py` membuka window, karakter *blockout* idle bernapas &
 berkedip, mode chip bisa diklik, transcript kosong, settings tersimpan.
 
 Acceptance:
-- [ ] Window frameless + rounded, resize mulus, tidak flicker.
-- [ ] 60 fps di mesin target.
-- [ ] Kontrak anchor `rig.json` sudah ada, walau art masih blockout.
-- [ ] `pytest` hijau untuk `test_state.py` (state machine murni).
-- [ ] Tidak ada API key hardcoded.
+- [x] Window frameless + rounded, resize mulus, tidak flicker.
+- [ ] 60 fps di mesin target — auto-degrade 30 fps sudah ada; perlu ukur di
+      mesin user (belum bisa diverifikasi dari sesi ini).
+- [x] Kontrak anchor `rig.json` sudah ada, walau art masih blockout.
+- [x] `pytest` hijau (23 test: state, config, viseme).
+- [x] Tidak ada API key hardcoded.
 
 ### M2 — Gemini Live tersambung
 
@@ -775,23 +776,21 @@ python run.py
 - API key: `GEMINI_API_KEY` env var, atau `config.json` (permission 0600).
 - `config.json` masuk `.gitignore`.
 - Test: `pytest -q`.
-- Format: `ruff format` + `ruff check` (diputuskan saat M1).
+- Lint: `ruff check` (tanpa `ruff format`; formatting manual agar diff kecil).
 
 ---
 
 ## 16. Pertanyaan Terbuka
 
-Sudah diputuskan: nama karakter **Rey**, art style **semi-realistis**, app
-**BelaEnglish**.
+Sudah diputuskan: app **BelaEnglish**, karakter **Rey** (perempuan, pertengahan
+20-an), art style **semi-realistis**, voice **Kore**.
 
-1. **Voice Gemini**: `Puck` (default), `Charon`, `Kore`, atau `Fenrir`? Perlu
-   dicoba langsung karena karakter suara memengaruhi persona.
-2. **Sumber aset**: komisi artis, AI + retouch, atau render dari base 3D?
+1. **Sumber aset**: komisi artis, AI + retouch, atau render dari base 3D?
    (menentukan jadwal M3)
-3. Level default user: B1? Dan apakah onboarding menanyakan level?
-4. Perlu mode "Indonesian explanation" (penjelasan grammar dalam bahasa
+2. Level default user: B1? Dan apakah onboarding menanyakan level?
+3. Perlu mode "Indonesian explanation" (penjelasan grammar dalam bahasa
    Indonesia) sebagai toggle, atau cukup sesekali?
-5. Target platform rilis pertama: Linux saja, atau Windows juga?
+4. Target platform rilis pertama: Linux saja, atau Windows juga?
 
 ---
 

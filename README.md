@@ -3,7 +3,58 @@
 Voice agent untuk latihan speaking bahasa Inggris — ngobrol suara dengan
 karakter 2.5D semi-realistis bernama **Rey**. Python + PyQt6 + Gemini Live API.
 
-> **Status: PLAN.** Belum ada implementasi. Baca **[PLAN.md](PLAN.md)** dulu.
+> **Status: M1 — UI shell + karakter blockout.** Suara, Gemini, dan database
+> menyusul di M2–M4. Baca **[PLAN.md](PLAN.md)** untuk arsitektur lengkap.
+
+## Yang sudah jalan (M1)
+
+- Jendela frameless rounded, tema gelap, drag + resize + maximize.
+- Karakter Rey digambar penuh dengan `QPainter` (blockout semi-realistis):
+  napas, kedip acak, arah pandang mengikuti kursor, 6 ekspresi, 7 bentuk mulut.
+- Animasi 60 fps dengan auto-degrade ke 30 fps kalau mesin keberatan.
+- State machine percakapan (idle → listening → thinking → speaking → interrupted)
+  yang nanti disambungkan ke Gemini Live.
+- Panel transkrip dengan bubble Rey/kamu + kartu koreksi.
+- Pemilih mode (Free Talk, Roleplay, Drill, Review), tombol mic + mute,
+  statistik sesi, dialog pengaturan, penyimpanan `config.json`.
+- 23 unit test untuk state machine, config, dan viseme.
+
+Belum aktif di M1: input teks, mikrofon, suara, API, database, aset art final.
+
+## Jalankan
+
+Butuh Python 3.11+.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python run.py
+```
+
+M1 tidak butuh API key. Saat M2 masuk, salin config dan isi key:
+
+```bash
+cp config.example.json config.json   # isi GEMINI_API_KEY
+```
+
+Key juga bisa dari environment: `export GEMINI_API_KEY=...`.
+
+## Kontrol
+
+| Aksi | Cara |
+|---|---|
+| Mute / unmute | `Ctrl+Space` atau klik tombol mic |
+| Ganti mode | Klik chip Free Talk / Roleplay / Drill / Review |
+| Pengaturan | Ikon ⚙ di title bar |
+| Tutup | `Esc` atau tombol ✕ |
+
+## Test
+
+```bash
+.venv/bin/python -m pytest
+.venv/bin/ruff check .
+```
 
 ## Dokumen
 
@@ -31,29 +82,19 @@ Rey spontan, padat, friendly. Boleh pakai ekspresi kasual ("anjir", "gila",
 - Laporan sesi + spaced repetition.
 - 100% lokal untuk data; hanya audio yang dikirim ke Gemini.
 
-## Struktur Rencana
+## Struktur
 
 ```
 BelaEnglish/
-├── PLAN.md
-├── requirements.txt
-├── config.example.json
+├── run.py
 ├── app/
-│   ├── core/     # live session, audio, tools, memory, persona
-│   ├── ui/       # window, avatar rig, transcript, theme
-│   └── data/     # schema.sql + seed
+│   ├── main.py
+│   ├── config.py
+│   ├── core/     # bus, state machine (+ live session, audio, tools di M2+)
+│   └── ui/       # window, avatar rig, transcript, theme
+├── assets/rig.json
 ├── tests/
 └── docs/
-```
-
-## Menjalankan (nanti, setelah M1)
-
-```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp config.example.json config.json   # isi GEMINI_API_KEY
-python run.py
 ```
 
 ## Lisensi

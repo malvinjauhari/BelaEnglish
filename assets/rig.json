@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "placeholder": true,
+  "note": "Kontrak anchor rig 2.5D. Blockout M1 memakai koordinat yang sama; art final menggantikan layer tanpa ubah kode.",
+  "canvas": [1000, 1000],
+  "anchors": {
+    "head": [500, 360],
+    "chin": [500, 540],
+    "mouth": [500, 505],
+    "eye_l": [432, 380],
+    "eye_r": [568, 380],
+    "brow_l": [432, 330],
+    "brow_r": [568, 330],
+    "neck": [500, 570]
+  },
+  "mouth_shapes": ["M", "A", "E", "O", "U", "F", "smile"],
+  "layers": []
+}
