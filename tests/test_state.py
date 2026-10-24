@@ -76,3 +76,17 @@ def test_force_and_reset():
     machine.handle(Event.SPEECH_START)
     assert machine.force(AppState.SPEAKING) is AppState.SPEAKING
     assert machine.reset() is AppState.IDLE
+
+
+def test_text_turn_skips_listening():
+    machine = TurnStateMachine()
+    assert machine.handle(Event.THINK) is AppState.THINKING
+    assert machine.handle(Event.AUDIO_START) is AppState.SPEAKING
+    assert machine.handle(Event.AUDIO_END) is AppState.IDLE
+
+
+def test_thinking_can_be_interrupted():
+    machine = TurnStateMachine()
+    machine.handle(Event.THINK)
+    assert machine.handle(Event.INTERRUPT) is AppState.INTERRUPTED
+    assert machine.handle(Event.SPEECH_START) is AppState.LISTENING

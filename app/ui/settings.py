@@ -53,6 +53,15 @@ class SettingsDialog(QDialog):
             self.level_combo.setCurrentText(level)
         form.addRow("Level Inggris", self.level_combo)
 
+        self.api_key_edit = QLineEdit()
+        self.api_key_edit.setObjectName("FormField")
+        self.api_key_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        if config.has_api_key:
+            self.api_key_edit.setPlaceholderText("Tersimpan — kosongkan jika tidak diubah")
+        else:
+            self.api_key_edit.setPlaceholderText("AIza... (atau set GEMINI_API_KEY)")
+        form.addRow("API key Gemini", self.api_key_edit)
+
         self.spice_slider, self.spice_value = self._slider_row(
             config.get("persona", "spice_level", default=1), self._spice_label
         )
@@ -78,7 +87,10 @@ class SettingsDialog(QDialog):
 
         root.addLayout(form)
 
-        hint = QLabel("Voice, model, dan perangkat audio diatur di config.json.")
+        hint = QLabel(
+            "API key disimpan di config.json (0600) atau lewat GEMINI_API_KEY. "
+            "Model dan perangkat audio diatur di config.json."
+        )
         hint.setObjectName("DialogHint")
         root.addWidget(hint)
 
@@ -117,6 +129,7 @@ class SettingsDialog(QDialog):
         return {
             "user_name": self.name_edit.text().strip(),
             "cefr_level": self.level_combo.currentText(),
+            "api_key": self.api_key_edit.text().strip(),
             "spice_level": self.spice_slider.value(),
             "correction_level": self.correction_slider.value(),
             "indonesian_help": self.indo_check.isChecked(),

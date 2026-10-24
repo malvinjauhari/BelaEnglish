@@ -1,7 +1,8 @@
-"""Jendela utama BelaEnglish (M1: shell UI + karakter)."""
+"""Jendela utama BelaEnglish (M2: shell UI + karakter + sesi Live)."""
 
 from __future__ import annotations
 
+import asyncio
 import time
 
 from PyQt6.QtCore import QPoint, QSize, Qt, QTimer
@@ -21,6 +22,7 @@ from PyQt6.QtWidgets import (
 
 from ..config import Config
 from ..core.bus import EventBus
+from ..core.live import LiveAgent
 from ..core.state import AppState, Mode, TurnStateMachine
 from .avatar.stage import AvatarStage
 from .settings import SettingsDialog
@@ -92,7 +94,7 @@ class TitleBar(QWidget):
         close.setObjectName("WinButton")
         close.setProperty("danger", "true")
         close.setFixedSize(32, 30)
-        close.clicked.connect(QApplication.instance().quit)
+        close.clicked.connect(window.close)
         layout.addWidget(close)
 
     # drag window tanpa frame
@@ -121,6 +123,9 @@ class MainWindow(QMainWindow):
         self.config = config
         self.bus = bus
         self.machine = TurnStateMachine()
+        self.agent = LiveAgent(config, bus, self.machine)
+        self._closing = False
+        self._last_latency_ms: int | None = None
 
         self.setWindowTitle("BelaEnglish")
         self.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint)
@@ -181,7 +186,7 @@ class MainWindow(QMainWindow):
         mic_row.addStretch(1)
         layout.addLayout(mic_row)
 
-        self.mic_hint = QLabel("Ctrl+Space untuk mute")
+        self.mic_hint = QLabel("Klik mic untuk mulai bicara")
         self.mic_hint.setObjectName("StatName")
         self.mic_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.mic_hint)
@@ -228,9 +233,9 @@ class MainWindow(QMainWindow):
         input_row.setSpacing(8)
         self.input = QLineEdit()
         self.input.setObjectName("InputBar")
-        self.input.setPlaceholderText("Input teks & suara aktif di tahap M2")
-        self.input.setEnabled(False)
+        self.input.setPlaceholderText("Klik mic untuk mulai, atau ketik di sini")
         self.input.returnPressed.connect(self._on_text_submit)
+        self.input.textChanged.connect(self._update_send_state)
         input_row.addWidget(self.input, 1)
 
         self.send_button = QPushButton("Kirim")
@@ -250,19 +255,23 @@ class MainWindow(QMainWindow):
         self.bus.state_changed.connect(self._on_state)
         self.bus.mode_changed.connect(self._on_mode)
         self.bus.message_added.connect(self.transcript.add_message)
+        self.bus.partial_transcript.connect(self.transcript.set_partial)
+        self.bus.notice.connect(self.transcript.add_notice)
         self.bus.correction_added.connect(self.transcript.add_correction)
         self.bus.emotion_changed.connect(self.stage.set_emotion)
         self.bus.level_changed.connect(self._on_level)
-        self.bus.muted_changed.connect(self._on_muted)
+        self.bus.session_changed.connect(self._on_session_changed)
+        self.bus.latency_reported.connect(self._on_latency)
 
         self.controls.mode_changed.connect(self._on_mode_clicked)
-        self.mic.muted_changed.connect(self.bus.muted_changed.emit)
-        self.mic.clicked.connect(lambda: self.stage.force_blink())
+        self.mic.clicked.connect(self._on_mic_clicked)
+        self.mic.muted_changed.connect(self._on_muted)
 
-        QShortcut(QKeySequence("Ctrl+Space"), self).activated.connect(self.mic.toggle)
+        QShortcut(QKeySequence("Ctrl+Space"), self).activated.connect(self._on_mute_shortcut)
         QShortcut(QKeySequence("Escape"), self).activated.connect(self.close)
 
         self._on_state(AppState.IDLE.value)
+        self._refresh_mic_hint()
 
     def _apply_config(self) -> None:
         level = self.config.get("persona", "cefr_level", default="B1")
@@ -287,6 +296,7 @@ class MainWindow(QMainWindow):
         self.titlebar.status.setProperty("state", key)
         self.titlebar.status.style().unpolish(self.titlebar.status)
         self.titlebar.status.style().polish(self.titlebar.status)
+        self._update_send_state()
 
     def _on_mode(self, mode_value: str) -> None:
         try:
@@ -302,20 +312,71 @@ class MainWindow(QMainWindow):
     def _on_mode_clicked(self, mode_value: str) -> None:
         self.machine.set_mode(mode_value)
 
-    def _on_level(self, level: float) -> None:
-        self.stage.set_audio("A", level)
+    def _on_level(self, level: float, shape: str = "A") -> None:
+        self.stage.set_audio(shape, level)
         self.mic.set_level(level)
 
     def _on_muted(self, muted: bool) -> None:
-        self.mic_hint.setText(
-            "Mute aktif · Ctrl+Space" if muted else "Ctrl+Space untuk mute"
+        self.agent.set_muted(muted)
+        self.bus.muted_changed.emit(muted)
+        self._refresh_mic_hint()
+
+    def _on_mute_shortcut(self) -> None:
+        if self.agent.is_running:
+            self.mic.toggle_muted()
+
+    def _on_latency(self, ms: int) -> None:
+        self._last_latency_ms = ms
+        self.titlebar.status.setToolTip(f"Respons terakhir: {ms} ms")
+
+    def _on_notice(self, text: str) -> None:
+        self.transcript.add_notice(text)
+
+    def _on_session_changed(self, active: bool) -> None:
+        if not active:
+            self.agent.set_muted(False)
+        self.mic.set_connected(active)
+        self.mic.setToolTip("Akhiri sesi" if active else "Mulai sesi")
+        self._start = time.monotonic()
+        self._update_send_state()
+        self._refresh_mic_hint()
+
+    def _refresh_mic_hint(self) -> None:
+        if not self.mic.connected:
+            text = "Klik mic untuk mulai bicara"
+        elif self.mic.muted:
+            text = "Mute aktif · Ctrl+Space untuk bicara lagi"
+        else:
+            text = "Ctrl+Space mute · klik mic untuk akhiri"
+        self.mic_hint.setText(text)
+
+    def _on_mic_clicked(self) -> None:
+        self.stage.force_blink()
+        if self.agent.is_running:
+            self._spawn(self.agent.stop())
+        else:
+            self._spawn(self.agent.start())
+
+    def _spawn(self, coro) -> None:
+        try:
+            asyncio.ensure_future(coro)
+        except RuntimeError:
+            self.transcript.add_notice("Event loop belum siap.")
+
+    def _update_send_state(self) -> None:
+        self.send_button.setEnabled(
+            bool(self.input.text().strip()) and self.agent.is_connected
         )
 
     def _on_text_submit(self) -> None:
         text = self.input.text().strip()
         if not text:
             return
+        if not self.agent.is_running:
+            self.transcript.add_notice("Klik mic dulu untuk memulai sesi, lalu kirim teksnya.")
+            return
         self.input.clear()
+        self._spawn(self.agent.send_text(text))
 
     def _open_settings(self) -> None:
         dialog = SettingsDialog(self.config, self)
@@ -328,6 +389,8 @@ class MainWindow(QMainWindow):
         self.config.set(values["correction_level"], "persona", "correction_level")
         self.config.set(values["indonesian_help"], "persona", "indonesian_help")
         self.config.set(values["always_on_top"], "ui", "always_on_top")
+        if values.get("api_key"):
+            self.config.set(values["api_key"], "gemini_api_key")
         self.config.save()
 
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, bool(values["always_on_top"]))
@@ -354,6 +417,20 @@ class MainWindow(QMainWindow):
         elapsed = int(time.monotonic() - self._start)
         minutes, seconds = divmod(elapsed, 60)
         self.timer_label.setText(f"{minutes:02d}:{seconds:02d}")
+
+    def closeEvent(self, event) -> None:  # noqa: N802
+        if self.agent.is_running and not self._closing:
+            self._closing = True
+            event.ignore()
+            self._spawn(self._shutdown())
+            return
+        super().closeEvent(event)
+
+    async def _shutdown(self) -> None:
+        await self.agent.stop()
+        app = QApplication.instance()
+        if app is not None:
+            app.quit()
 
     def sizeHint(self) -> QSize:  # noqa: N802
         return QSize(1180, 720)

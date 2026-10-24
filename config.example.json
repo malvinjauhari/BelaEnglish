@@ -26,5 +26,8 @@
     "always_on_top": false,
     "theme": "midnight",
     "fps_cap": 60
+  },
+  "session": {
+    "greet_on_connect": true
   }
 }

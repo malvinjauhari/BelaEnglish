@@ -49,6 +49,9 @@ DEFAULTS: dict[str, Any] = {
         "theme": "midnight",
         "fps_cap": 60,
     },
+    "session": {
+        "greet_on_connect": True,
+    },
 }
 
 

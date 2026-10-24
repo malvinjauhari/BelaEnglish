@@ -348,7 +348,7 @@ Ringkasan kepribadian:
 
 ### 8.1 Prinsip
 
-- Satu file `rayenglish.db` di direktori data user (`platformdirs`), bukan di repo.
+- Satu file `belaenglish.db` di direktori data user (`platformdirs`), bukan di repo.
 - Skema versioned (`PRAGMA user_version`), migrasi idempoten saat start.
 - WAL mode, semua akses lewat `MemoryService`.
 - Seed data ada di `app/data/seed/*.json` dan di-import sekali.
@@ -688,16 +688,21 @@ Acceptance:
 - [x] `pytest` hijau (23 test: state, config, viseme).
 - [x] Tidak ada API key hardcoded.
 
-### M2 — Gemini Live tersambung
+### M2 — Gemini Live tersambung (dikerjakan)
 
 Deliverable: ngobrol suara 2 arah, transkrip muncul, barge-in bekerja, reconnect
 otomatis.
 
 Acceptance:
-- [ ] First audio ≤ 1.1 s (diukur 20 turn, median).
-- [ ] Interupsi menghentikan suara < 150 ms.
-- [ ] Putus internet 5 s → reconnect tanpa restart aplikasi.
-- [ ] Log transkrip tersimpan di DB.
+- [x] Koneksi Gemini Live (native audio) dengan `google-genai`, mic 16 kHz + speaker 24 kHz.
+- [x] Sapaan otomatis saat sesi pertama, transkrip input/output live + final tersimpan ke tampilan.
+- [x] Barge-in: mic tetap aktif saat Rey bicara, `interrupted` mengosongkan buffer output.
+- [x] Reconnect otomatis + rotasi model fallback + pemulihan session resumption.
+- [x] Input teks tetap bisa dipakai saat terhubung; mute via orb/hotkey.
+- [ ] First audio ≤ 1.1 s (diukur 20 turn, median) — perlu kunci API + pengukuran lapangan.
+- [ ] Interupsi menghentikan suara < 150 ms — diverifikasi dengan buffer callback (<150 ms target).
+- [ ] Putus internet 5 s → reconnect tanpa restart aplikasi — diuji dengan fake session, perlu uji lapangan.
+- [ ] Log transkrip tersimpan di DB — ditunda ke M4.
 
 ### M3 — Karakter hidup (semi-realistis)
 

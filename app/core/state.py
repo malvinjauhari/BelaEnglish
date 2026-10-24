@@ -49,10 +49,13 @@ TRANSITIONS: dict[tuple[AppState, Event], AppState] = {
     # idle
     (AppState.IDLE, Event.CONNECT): AppState.CONNECTING,
     (AppState.IDLE, Event.SPEECH_START): AppState.LISTENING,
+    (AppState.IDLE, Event.THINK): AppState.THINKING,
+    (AppState.IDLE, Event.AUDIO_START): AppState.SPEAKING,
     (AppState.IDLE, Event.ERROR_EVENT): AppState.ERROR,
     # mendengar
     (AppState.LISTENING, Event.SPEECH_END): AppState.THINKING,
     (AppState.LISTENING, Event.THINK): AppState.THINKING,
+    (AppState.LISTENING, Event.AUDIO_START): AppState.SPEAKING,
     (AppState.LISTENING, Event.INTERRUPT): AppState.IDLE,
     (AppState.LISTENING, Event.ERROR_EVENT): AppState.ERROR,
     (AppState.LISTENING, Event.RESET): AppState.IDLE,
@@ -60,6 +63,7 @@ TRANSITIONS: dict[tuple[AppState, Event], AppState] = {
     (AppState.THINKING, Event.AUDIO_START): AppState.SPEAKING,
     (AppState.THINKING, Event.AUDIO_END): AppState.IDLE,
     (AppState.THINKING, Event.SPEECH_START): AppState.LISTENING,
+    (AppState.THINKING, Event.INTERRUPT): AppState.INTERRUPTED,
     (AppState.THINKING, Event.ERROR_EVENT): AppState.ERROR,
     (AppState.THINKING, Event.RESET): AppState.IDLE,
     # bicara

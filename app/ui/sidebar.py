@@ -24,7 +24,7 @@ MODES: list[tuple[str, str]] = [
 
 
 class MicOrb(QWidget):
-    """Tombol mic bulat dengan denyut halus; bukan QPushButton agar bisa dicat."""
+    """Tombol mic bulat: klik untuk mulai/akhiri sesi, muting lewat hotkey."""
 
     muted_changed = pyqtSignal(bool)
     clicked = pyqtSignal()
@@ -33,7 +33,8 @@ class MicOrb(QWidget):
         super().__init__(parent)
         self.setFixedSize(72, 72)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip("Mute / unmute (Ctrl+Space)")
+        self.setToolTip("Mulai sesi")
+        self._connected = False
         self._muted = False
         self._level = 0.0
         self._phase = 0.0
@@ -46,15 +47,27 @@ class MicOrb(QWidget):
     def muted(self) -> bool:
         return self._muted
 
+    @property
+    def connected(self) -> bool:
+        return self._connected
+
+    def set_connected(self, connected: bool) -> None:
+        if connected == self._connected:
+            return
+        self._connected = connected
+        if not connected:
+            self.set_muted(False)
+        self.update()
+
     def set_muted(self, muted: bool) -> None:
         if muted == self._muted:
             return
         self._muted = muted
-        self.muted_changed.emit(muted)
         self.update()
 
-    def toggle(self) -> None:
+    def toggle_muted(self) -> None:
         self.set_muted(not self._muted)
+        self.muted_changed.emit(self._muted)
 
     def set_level(self, level: float) -> None:
         self._level = max(0.0, min(1.0, level))
@@ -68,7 +81,6 @@ class MicOrb(QWidget):
 
     def mousePressEvent(self, event) -> None:  # noqa: N802
         if event.button() == Qt.MouseButton.LeftButton:
-            self.toggle()
             self.clicked.emit()
 
     def paintEvent(self, _event) -> None:  # noqa: N802
@@ -77,16 +89,22 @@ class MicOrb(QWidget):
 
         cx, cy = self.width() / 2.0, self.height() / 2.0
         base_r = 24.0
-        accent = QColor("#FF6B6B") if self._muted else QColor("#7C5CFF")
+        if self._muted:
+            accent = QColor("#FF6B6B")
+        elif self._connected:
+            accent = QColor("#7C5CFF")
+        else:
+            accent = QColor("#6C7796")
 
-        pulse = (math.sin(self._phase * 2.4) + 1.0) / 2.0
-        halo_r = base_r + 7.0 + pulse * 3.0 + self._level * 10.0
-        halo = QRadialGradient(QPointF(cx, cy), halo_r)
-        halo.setColorAt(0.55, QColor(accent.red(), accent.green(), accent.blue(), 46))
-        halo.setColorAt(1.0, QColor(accent.red(), accent.green(), accent.blue(), 0))
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(halo)
-        p.drawEllipse(QPointF(cx, cy), halo_r, halo_r)
+        if self._connected:
+            pulse = (math.sin(self._phase * 2.4) + 1.0) / 2.0
+            halo_r = base_r + 7.0 + pulse * 3.0 + self._level * 10.0
+            halo = QRadialGradient(QPointF(cx, cy), halo_r)
+            halo.setColorAt(0.55, QColor(accent.red(), accent.green(), accent.blue(), 46))
+            halo.setColorAt(1.0, QColor(accent.red(), accent.green(), accent.blue(), 0))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(halo)
+            p.drawEllipse(QPointF(cx, cy), halo_r, halo_r)
 
         body = QRadialGradient(QPointF(cx, cy - 6), base_r * 1.5)
         body.setColorAt(0.0, QColor("#2A3457"))
@@ -95,7 +113,8 @@ class MicOrb(QWidget):
         p.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), 170), 1.4))
         p.drawEllipse(QPointF(cx, cy), base_r, base_r)
 
-        pen = QPen(QColor("#E8ECF8"), 2.6)
+        icon = QColor("#E8ECF8") if self._connected else QColor("#98A2C0")
+        pen = QPen(icon, 2.6)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         p.setPen(pen)
         p.setBrush(Qt.BrushStyle.NoBrush)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from app.ui.avatar.visemes import (
+from app.core.visemes import (
     SILENCE_LEVEL,
     EnvelopeAnalyzer,
     VisemeDriver,

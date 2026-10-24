@@ -1,14 +1,16 @@
-"""Entry point aplikasi."""
+"""Entry point aplikasi: Qt + asyncio lewat qasync."""
 
 from __future__ import annotations
 
+import asyncio
 import sys
 
+import qasync
 from PyQt6.QtWidgets import QApplication
 
-from . import theme
 from .config import Config
 from .core.bus import EventBus
+from .ui import theme
 from .ui.main_window import MainWindow
 
 
@@ -18,6 +20,9 @@ def main(argv: list[str] | None = None) -> int:
     app.setApplicationDisplayName("BelaEnglish")
     app.setOrganizationName("BelaEnglish")
     app.setStyleSheet(theme.stylesheet())
+
+    loop = qasync.QEventLoop(app)
+    asyncio.set_event_loop(loop)
 
     config = Config()
     bus = EventBus()
@@ -31,4 +36,6 @@ def main(argv: list[str] | None = None) -> int:
         window.move(frame.topLeft())
 
     window.show()
-    return app.exec()
+    with loop:
+        loop.run_forever()
+    return 0

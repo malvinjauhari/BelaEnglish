@@ -34,6 +34,10 @@ class _Bubble(QFrame):
         body.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         body.setMaximumWidth(520)
         layout.addWidget(body)
+        self._body = body
+
+    def set_text(self, text: str) -> None:
+        self._body.setText(text)
 
 
 class _CorrectionCard(QFrame):
@@ -95,10 +99,16 @@ class TranscriptView(QScrollArea):
         self._empty.setWordWrap(True)
         self._layout.insertWidget(0, self._empty)
 
+        self._live_row: QHBoxLayout | None = None
+        self._live_bubble: _Bubble | None = None
+        self._live_speaker: str | None = None
+
     # ── API ───────────────────────────────────────────────────────────────
     def add_message(self, speaker: str, text: str) -> None:
         if not text.strip():
             return
+        if self._live_speaker == speaker.lower():
+            self._remove_live()
         self._empty.hide()
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
@@ -112,6 +122,52 @@ class TranscriptView(QScrollArea):
         self._layout.insertLayout(self._layout.count() - 1, row)
         self._scroll_to_bottom()
 
+    def set_partial(self, speaker: str, text: str) -> None:
+        """Tampilkan/perbarui bubble sementara; teks kosong menghapusnya."""
+        speaker = speaker.lower()
+        text = text.strip()
+        if not text:
+            if self._live_speaker == speaker:
+                self._remove_live()
+            return
+
+        if self._live_bubble is not None and self._live_speaker == speaker:
+            self._live_bubble.set_text(text)
+            self._scroll_to_bottom()
+            return
+
+        self._remove_live()
+        self._empty.hide()
+
+        row = QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 0)
+        bubble = _Bubble(speaker, text)
+        if speaker == "rey":
+            row.addWidget(bubble, 0, Qt.AlignmentFlag.AlignLeft)
+            row.addStretch(1)
+        else:
+            row.addStretch(1)
+            row.addWidget(bubble, 0, Qt.AlignmentFlag.AlignRight)
+        self._layout.insertLayout(self._layout.count() - 1, row)
+
+        self._live_row = row
+        self._live_bubble = bubble
+        self._live_speaker = speaker
+        self._scroll_to_bottom()
+
+    def add_notice(self, text: str) -> None:
+        text = text.strip()
+        if not text:
+            return
+        self._empty.hide()
+        note = QLabel(text)
+        note.setObjectName("EmptyHint")
+        note.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        note.setWordWrap(True)
+        note.setContentsMargins(12, 2, 12, 2)
+        self._layout.insertWidget(self._layout.count() - 1, note)
+        self._scroll_to_bottom()
+
     def add_correction(self, original: str, better: str, note: str = "") -> None:
         self._empty.hide()
         row = QHBoxLayout()
@@ -122,6 +178,9 @@ class TranscriptView(QScrollArea):
         self._scroll_to_bottom()
 
     def clear(self) -> None:
+        self._live_row = None
+        self._live_bubble = None
+        self._live_speaker = None
         while self._layout.count() > 1:
             item = self._layout.takeAt(0)
             widget = item.widget()
@@ -131,6 +190,16 @@ class TranscriptView(QScrollArea):
                 self._clear_layout(item.layout())
         self._layout.insertWidget(0, self._empty)
         self._empty.show()
+
+    def _remove_live(self) -> None:
+        row = self._live_row
+        self._live_row = None
+        self._live_bubble = None
+        self._live_speaker = None
+        if row is None:
+            return
+        self._layout.removeItem(row)
+        self._clear_layout(row)
 
     def _clear_layout(self, layout) -> None:
         while layout.count():

@@ -26,7 +26,7 @@ from PyQt6.QtGui import (
     QRadialGradient,
 )
 
-from .visemes import VisemeDriver
+from ...core.visemes import VisemeDriver
 
 # ── palet karakter ───────────────────────────────────────────────────────────
 SKIN_LIGHT = QColor("#F7D6BF")
